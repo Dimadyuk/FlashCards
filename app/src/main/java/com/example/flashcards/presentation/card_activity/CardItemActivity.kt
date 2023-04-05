@@ -1,11 +1,14 @@
 package com.example.flashcards.presentation.card_activity
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import com.example.flashcards.R
 import com.example.flashcards.data.network.api.ApiFactory
 import com.example.flashcards.data.network.api.ApiService
 import com.example.flashcards.data.network.pojo.ResponseData
@@ -26,18 +29,22 @@ class CardItemActivity : AppCompatActivity(), TextView.OnEditorActionListener {
     private val binding by lazy {
         ActivityCardItemBinding.inflate(layoutInflater)
     }
-
     private lateinit var viewModel: CardItemViewModel
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         viewModel = ViewModelProvider(this)[CardItemViewModel::class.java]
-        val card = intent.extras?.get("card") as CardItem?
-        val mod = intent.extras?.get("mod") as String
-        if (card != null) {
-            binding.etWord.setText(card.word)
-            binding.etTranslation.setText(card.translation)
-        }
+
+        val (card, mod) = parseIntent()
+        setOnClickListeners(mod, card)
+
+    }
+
+    private fun setOnClickListeners(
+        mod: String?,
+        card: CardItem?
+    ) {
         binding.btnSave.setOnClickListener {
 
             if (mod == MODE_ADD) {
@@ -57,7 +64,16 @@ class CardItemActivity : AppCompatActivity(), TextView.OnEditorActionListener {
 
         binding.etWord.setOnEditorActionListener(this)
         binding.etTranslation.setOnEditorActionListener(this)
+    }
 
+    private fun parseIntent(): Pair<CardItem?, String?> {
+        val card = intent.extras?.get(EXTRA_CARD_ITEM) as CardItem?
+        val mod = intent.getStringExtra(EXTRA_SCREEN_MODE)
+        if (card != null) {
+            binding.etWord.setText(card.word)
+            binding.etTranslation.setText(card.translation)
+        }
+        return Pair(card, mod)
     }
 
     override fun onDestroy() {
@@ -84,19 +100,20 @@ class CardItemActivity : AppCompatActivity(), TextView.OnEditorActionListener {
                             ApiService.EN_RU -> {
                                 binding.etTranslation.setText(translation)
                                 if (translation == "") {
-                                    binding.etTranslation.hint = "слово не найдено!"
+
+                                    binding.etWord.error = getString(R.string.word_not_found)
                                 }
                             }
                             ApiService.RU_EN -> {
                                 binding.etWord.setText(translation)
                                 if (translation == "") {
-                                    binding.etWord.hint = "слово не найдено!"
+                                    binding.etTranslation.error = getString(R.string.word_not_found)
                                 }
                             }
                             else -> {
                                 binding.etTranslation.setText(translation)
                                 if (translation == "") {
-                                    binding.etTranslation.hint = "слово не найдено!"
+                                    binding.etWord.error = getString(R.string.word_not_found)
                                 }
                             }
                         }
@@ -135,7 +152,22 @@ class CardItemActivity : AppCompatActivity(), TextView.OnEditorActionListener {
     }
 
     companion object {
-        const val MODE_EDIT = "mod_edit"
-        const val MODE_ADD = "mod_add"
+        private const val MODE_EDIT = "mod_edit"
+        private const val MODE_ADD = "mod_add"
+        private const val EXTRA_SCREEN_MODE = "extra_mode"
+        private const val EXTRA_CARD_ITEM = "extra_shop_item"
+
+        fun newIntentAddItem(context: Context): Intent {
+            val intent = Intent(context, CardItemActivity::class.java)
+            intent.putExtra(EXTRA_SCREEN_MODE, MODE_ADD)
+            return intent
+        }
+
+        fun newIntentEditItem(context: Context, cardItem: CardItem): Intent {
+            val intent = Intent(context, CardItemActivity::class.java)
+            intent.putExtra(EXTRA_SCREEN_MODE, MODE_EDIT)
+            intent.putExtra(EXTRA_CARD_ITEM, cardItem)
+            return intent
+        }
     }
 }

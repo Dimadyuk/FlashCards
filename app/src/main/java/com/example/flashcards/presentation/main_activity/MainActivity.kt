@@ -36,16 +36,12 @@ class MainActivity : AppCompatActivity(), CardAdapter.Listener {
         }
 
         binding.buttonAddCardItem.setOnClickListener {
-            val intent = Intent(this, CardItemActivity::class.java)
-            intent.putExtra("mod", CardItemActivity.MODE_ADD)
+            val intent = CardItemActivity.newIntentAddItem(this)
             startActivity(intent)
         }
 
         binding.buttonStartTest.setOnClickListener {
             val intent = Intent(this, ExaminationActivity::class.java)
-//            supportFragmentManager.beginTransaction()
-//                .add(R.id.fragment_container, ExaminationFragment.newInstance())
-//                .commit()
             startActivity(intent)
         }
 
@@ -73,9 +69,7 @@ class MainActivity : AppCompatActivity(), CardAdapter.Listener {
     }
 
     override fun onClick(cardItem: CardItem, position: Int) {
-        val intent = Intent(this, CardItemActivity::class.java)
-        intent.putExtra("card", cardItem)
-        intent.putExtra("mod", CardItemActivity.MODE_EDIT)
+        val intent = CardItemActivity.newIntentEditItem(this, cardItem)
         startActivity(intent)
     }
 

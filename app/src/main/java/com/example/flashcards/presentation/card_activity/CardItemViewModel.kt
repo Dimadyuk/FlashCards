@@ -2,6 +2,8 @@ package com.example.flashcards.presentation.card_activity
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.example.flashcards.data.CardListRepositoryImpl
 import com.example.flashcards.domain.CardItem
@@ -15,10 +17,16 @@ class CardItemViewModel(application: Application) : AndroidViewModel(application
     private val repository = CardListRepositoryImpl(application)
 
     private val addCardUseCase = AddCardUseCase(repository)
-
     private val editCardUseCase = EditCardUseCase(repository)
-
     private val getCardItemByWordUseCase = GetCardByWordUseCase(repository)
+
+    private val _errorInputWord = MutableLiveData<Boolean>()
+    val errorInputWord: LiveData<Boolean>
+        get() = _errorInputWord
+
+    private val _errorInputTranslation = MutableLiveData<Boolean>()
+    val errorInputTranslation: LiveData<Boolean>
+        get() = _errorInputTranslation
 
 
     fun editCardItem(cardItem: CardItem) {
@@ -35,5 +43,13 @@ class CardItemViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             addCardUseCase.addCard(cardItem)
         }
+    }
+
+    fun resetErrorInputWord() {
+        _errorInputWord.value = false
+    }
+
+    fun resetErrorInputTranslation() {
+        _errorInputTranslation.value = false
     }
 }
