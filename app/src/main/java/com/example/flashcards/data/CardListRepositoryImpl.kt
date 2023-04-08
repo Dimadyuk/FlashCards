@@ -1,12 +1,17 @@
 package com.example.flashcards.data
 
 import android.app.Application
-import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.Transformations
 import com.example.flashcards.data.database.AppDatabase
+import com.example.flashcards.data.network.api.ApiFactory
+import com.example.flashcards.data.network.api.ApiService
+import com.example.flashcards.data.network.pojo.ResponseData
 import com.example.flashcards.domain.CardItem
 import com.example.flashcards.domain.CardListRepository
+import com.google.gson.Gson
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 class CardListRepositoryImpl(
     application: Application
@@ -54,5 +59,33 @@ class CardListRepositoryImpl(
 
     }
 
+    override suspend fun getTranslation(langPair: String, word: String): Pair<String, String> {
+
+        val wordInBase = if (langPair == ApiService.EN_RU) {
+            cardListDao.getCardItemByWord(word)
+        } else {
+            cardListDao.getCardItemByTranslation(word)
+        }
+        var wordEN = wordInBase?.word ?: ""
+        var translationRU = wordInBase?.translation ?: ""
+
+        if (wordInBase == null) {
+            withContext(Dispatchers.IO) {
+                val response = ApiFactory.apiService.getTranslationDatum(
+                    q = word,
+                    langpair = langPair
+                )
+                val result = Gson().fromJson(response.cardInfoJsonObject, ResponseData::class.java)
+                translationRU = result.translatedText ?: ""
+            }
+
+        }
+        val pair = if (langPair == ApiService.EN_RU) {
+            Pair(wordEN, translationRU)
+        } else {
+            Pair(translationRU, wordEN)
+        }
+        return pair
+    }
 
 }

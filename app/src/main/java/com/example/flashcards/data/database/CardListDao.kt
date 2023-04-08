@@ -29,5 +29,8 @@ interface CardListDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addCardItem(cardItem: CardItemDbModel)
 
+    @Query("SELECT * FROM card_items WHERE translation = :translation LIMIT 1")
+    suspend fun getCardItemByTranslation(translation: String): CardItemDbModel?
+
 
 }

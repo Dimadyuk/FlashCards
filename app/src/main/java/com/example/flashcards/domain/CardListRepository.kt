@@ -17,4 +17,6 @@ interface CardListRepository {
     suspend fun getDisplacedCardList(): List<CardItem>
 
     suspend fun getCardItemByWord(word: String): CardItem?
+
+    suspend fun getTranslation(langPair: String, word: String): Pair<String, String>
 }

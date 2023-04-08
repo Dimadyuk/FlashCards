@@ -3,11 +3,14 @@ package com.example.flashcards.presentation.card_activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.util.Log
 import android.view.KeyEvent
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.example.flashcards.R
 import com.example.flashcards.data.network.api.ApiFactory
 import com.example.flashcards.data.network.api.ApiService
@@ -38,6 +41,7 @@ class CardItemActivity : AppCompatActivity(), TextView.OnEditorActionListener {
 
         val (card, mod) = parseIntent()
         setOnClickListeners(mod, card)
+        addTextChangeListeners()
 
     }
 
@@ -83,52 +87,72 @@ class CardItemActivity : AppCompatActivity(), TextView.OnEditorActionListener {
     }
 
     private fun findTranslation(langPair: String, word: String) {
-        coroutineScope.launch {
-            val wordInBase = viewModel.getCardItemByWord(word)
+        lifecycleScope.launch {
 
-            if (wordInBase == null) {
-                val disposable = ApiFactory.apiService.getTranslationDatum(
-                    q = word,
-                    langpair = langPair
-                )
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({
-                        val data = Gson().fromJson(it.cardInfoJsonObject, ResponseData::class.java)
-                        val translation = data.translatedText ?: ""
-                        when (langPair) {
-                            ApiService.EN_RU -> {
-                                binding.etTranslation.setText(translation)
-                                if (translation == "") {
-
-                                    binding.etWord.error = getString(R.string.word_not_found)
-                                }
-                            }
-                            ApiService.RU_EN -> {
-                                binding.etWord.setText(translation)
-                                if (translation == "") {
-                                    binding.etTranslation.error = getString(R.string.word_not_found)
-                                }
-                            }
-                            else -> {
-                                binding.etTranslation.setText(translation)
-                                if (translation == "") {
-                                    binding.etWord.error = getString(R.string.word_not_found)
-                                }
-                            }
-                        }
-                        Log.d("TEST", "$data  ---  $it")
-                    }, {
-                        Log.d("TEST", it.message.toString())
-                    })
-                compositeDisposable.add(disposable)
-            } else {
-                binding.etTranslation.setText(wordInBase.translation)
+            val pair = withContext(Dispatchers.IO) {
+                viewModel.getTranslation(langPair, word)
             }
-
+            val wordEN = pair.first
+            val translationRU = pair.second
+            setErrorOrTranslation(langPair, wordEN, translationRU)
         }
 
 
+    }
+
+    private fun addTextChangeListeners() {
+        binding.etWord.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                viewModel.resetErrorInputWord()
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+
+            }
+
+        })
+
+        binding.etTranslation.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
+
+            }
+
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                viewModel.resetErrorInputTranslation()
+            }
+
+            override fun afterTextChanged(s: Editable?) {
+
+            }
+
+        })
+    }
+
+    private fun setErrorOrTranslation(langPair: String, wordEN: String, translationRU: String) {
+        when (langPair) {
+            ApiService.EN_RU -> {
+                binding.etTranslation.setText(translationRU)
+                if (translationRU == "") {
+                    binding.tilWord.error = getString(R.string.word_not_found)
+                }
+            }
+            ApiService.RU_EN -> {
+                binding.etWord.setText(wordEN)
+                if (wordEN == "") {
+                    binding.tilTranslation.error = getString(R.string.word_not_found)
+                }
+            }
+            else -> {
+                binding.etTranslation.setText(translationRU)
+                if (translationRU == "") {
+                    binding.tilWord.error = getString(R.string.word_not_found)
+                }
+            }
+        }
     }
 
     override fun onEditorAction(v: TextView?, actionId: Int, event: KeyEvent?): Boolean {

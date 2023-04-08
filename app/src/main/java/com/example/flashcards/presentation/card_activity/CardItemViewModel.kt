@@ -10,6 +10,7 @@ import com.example.flashcards.domain.CardItem
 import com.example.flashcards.domain.use_cases.AddCardUseCase
 import com.example.flashcards.domain.use_cases.EditCardUseCase
 import com.example.flashcards.domain.use_cases.GetCardByWordUseCase
+import com.example.flashcards.domain.use_cases.GetTranslationUseCase
 import kotlinx.coroutines.launch
 
 class CardItemViewModel(application: Application) : AndroidViewModel(application) {
@@ -19,6 +20,7 @@ class CardItemViewModel(application: Application) : AndroidViewModel(application
     private val addCardUseCase = AddCardUseCase(repository)
     private val editCardUseCase = EditCardUseCase(repository)
     private val getCardItemByWordUseCase = GetCardByWordUseCase(repository)
+    private val getTranslationUseCase = GetTranslationUseCase(repository)
 
     private val _errorInputWord = MutableLiveData<Boolean>()
     val errorInputWord: LiveData<Boolean>
@@ -33,6 +35,10 @@ class CardItemViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             editCardUseCase.editCard(cardItem)
         }
+    }
+
+    suspend fun getTranslation(langPair: String, word: String): Pair<String, String> {
+        return getTranslationUseCase.invoke(langPair, word)
     }
 
     suspend fun getCardItemByWord(word: String): CardItem? {
