@@ -21,6 +21,7 @@ import com.google.gson.Gson
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.schedulers.Schedulers
+import kotlinx.android.synthetic.main.activity_card_item.*
 import kotlinx.coroutines.*
 
 class CardItemActivity : AppCompatActivity(), TextView.OnEditorActionListener {
@@ -42,8 +43,9 @@ class CardItemActivity : AppCompatActivity(), TextView.OnEditorActionListener {
         val (card, mod) = parseIntent()
         setOnClickListeners(mod, card)
         addTextChangeListeners()
-
+        observeViewModel()
     }
+
 
     private fun setOnClickListeners(
         mod: String?,
@@ -108,6 +110,7 @@ class CardItemActivity : AppCompatActivity(), TextView.OnEditorActionListener {
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 viewModel.resetErrorInputWord()
+                viewModel.resetErrorInputTranslation()
             }
 
             override fun afterTextChanged(s: Editable?) {
@@ -123,6 +126,7 @@ class CardItemActivity : AppCompatActivity(), TextView.OnEditorActionListener {
 
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 viewModel.resetErrorInputTranslation()
+                viewModel.resetErrorInputWord()
             }
 
             override fun afterTextChanged(s: Editable?) {
@@ -130,6 +134,26 @@ class CardItemActivity : AppCompatActivity(), TextView.OnEditorActionListener {
             }
 
         })
+    }
+
+    private fun observeViewModel() {
+        viewModel.errorInputWord.observe(this) {
+            val massage = if (it) {
+                getString(R.string.word_not_found)
+            } else {
+                null
+            }
+            binding.tilWord.error = massage
+        }
+
+        viewModel.errorInputTranslation.observe(this) {
+            val massage = if (it) {
+                getString(R.string.word_not_found)
+            } else {
+                null
+            }
+            binding.tilTranslation.error = massage
+        }
     }
 
     private fun setErrorOrTranslation(langPair: String, wordEN: String, translationRU: String) {
@@ -161,6 +185,7 @@ class CardItemActivity : AppCompatActivity(), TextView.OnEditorActionListener {
             binding.etWord -> {
                 word = binding.etWord.text.toString()
                 ApiService.EN_RU
+
             }
             binding.etTranslation -> {
                 word = binding.etTranslation.text.toString()
@@ -171,6 +196,8 @@ class CardItemActivity : AppCompatActivity(), TextView.OnEditorActionListener {
                 ApiService.EN_RU
             }
         }
+        viewModel.resetErrorInputWord()
+        viewModel.resetErrorInputTranslation()
         findTranslation(langPair, word)
         return false
     }
