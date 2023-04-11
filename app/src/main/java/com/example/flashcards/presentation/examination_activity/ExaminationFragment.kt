@@ -26,6 +26,8 @@ class ExaminationFragment : Fragment() {
 
     var list = listOf<CardItem>()
 
+    private var countOfWords = 0
+    private var numberOfWord = 1
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -40,14 +42,17 @@ class ExaminationFragment : Fragment() {
 
         var id = 0
 
+
         uiScope.launch {
             CoroutineScope(Dispatchers.IO).launch {
                 list = viewModel.loadList()
                 shuffle(list)
             }.join()
+            countOfWords = list.size
 
             binding.tvWord.text = list[id].word
             binding.tvTranslation.text = ""
+            binding.tvCount.text = "$numberOfWord / $countOfWords"
         }
 
         binding.btnCheck.setOnClickListener {
@@ -56,6 +61,8 @@ class ExaminationFragment : Fragment() {
                 when (binding.btnCheck.text) {
                     getString(R.string.next) -> {
                         id++
+                        numberOfWord++
+                        binding.tvCount.text = "$numberOfWord / $countOfWords"
                         binding.tvWord.text = list[id].word
                         binding.tvTranslation.text = ""
                         binding.btnCheck.setText(R.string.check_answer)
